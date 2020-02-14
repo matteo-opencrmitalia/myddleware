@@ -70,4 +70,5 @@ macos: find var/cache -type d -exec sudo chmod 0777 {} +
 sudo rm -fr var/cache/*
 sudo rm -rf vendor && composer update -v --ignore-platform-reqs --no-scripts
 docker-compose run --rm myddleware php composer.phar run-script post-install-cmd
+
 ```
