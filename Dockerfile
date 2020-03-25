@@ -10,25 +10,31 @@ RUN apt-get update && apt-get upgrade -y && \
     sed -e 's!DocumentRoot /var/www/html!DocumentRoot /var/www/html/web!' \
         -ri /etc/apache2/sites-available/000-default.conf
 
-RUN pecl install -f xdebug && \
-    docker-php-ext-enable xdebug && \
-    echo "xdebug.remote_enable = 1" >> /usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini && \
-    # host.docker.internal does not work on Linux yet: https://github.com/docker/for-linux/issues/264
-    # Workaround:
-    # apt install iproute2 && ip -4 route list match 0/0 | awk '{print $3 " host.docker.internal"}' >> /etc/hosts \
-    echo "xdebug.remote_host=host.docker.internal" >> /usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini && \
-    echo "xdebug.remote_autostart = 0" >> /usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini && \
-    echo "xdebug.remote_connect_back = 0" >> /usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini && \
-    echo "xdebug.remote_port = 9000" >> /usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini && \
-    echo "xdebug.remote_handler = 'dbgp'" >> /usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini && \
-    echo "xdebug.remote_mode = req" >> /usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini
+# RUN pecl install -f xdebug && \
+#     docker-php-ext-enable xdebug && \
+#     echo "xdebug.remote_enable = 1" >> /usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini && \
+#     # host.docker.internal does not work on Linux yet: https://github.com/docker/for-linux/issues/264
+#     # Workaround:
+#     # apt install iproute2 && ip -4 route list match 0/0 | awk '{print $3 " host.docker.internal"}' >> /etc/hosts \
+#     echo "xdebug.remote_host=host.docker.internal" >> /usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini && \
+#     echo "xdebug.remote_autostart = 0" >> /usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini && \
+#     echo "xdebug.remote_connect_back = 0" >> /usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini && \
+#     echo "xdebug.remote_port = 9000" >> /usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini && \
+#     echo "xdebug.remote_handler = 'dbgp'" >> /usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini && \
+#     echo "xdebug.remote_mode = req" >> /usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini
 
-RUN curl https://packages.microsoft.com/keys/microsoft.asc | apt-key add - && \
-    curl https://packages.microsoft.com/config/debian/10/prod.list > /etc/apt/sources.list.d/mssql-release.list && \
-    apt-get update && \
-    ACCEPT_EULA=Y apt-get install --no-install-recommends -y msodbcsql17 unixodbc-dev && \
-    pecl install -f sqlsrv pdo_sqlsrv && \
-    docker-php-ext-enable sqlsrv pdo_sqlsrv && \
+# RUN curl https://packages.microsoft.com/keys/microsoft.asc | apt-key add - && \
+#     curl https://packages.microsoft.com/config/debian/10/prod.list > /etc/apt/sources.list.d/mssql-release.list && \
+#     apt-get update && \
+#     ACCEPT_EULA=Y apt-get install --no-install-recommends -y msodbcsql17 unixodbc-dev && \
+#     pecl install -f sqlsrv pdo_sqlsrv && \
+#     docker-php-ext-enable sqlsrv pdo_sqlsrv && \
+#     sed -i 's,^\(MinProtocol[ ]*=\).*,\1'TLSv1.0',g' /etc/ssl/openssl.cnf && \
+#     sed -i 's,^\(CipherString[ ]*=\).*,\1'DEFAULT@SECLEVEL=1',g' /etc/ssl/openssl.cnf
+
+RUN apt-get update && apt-get install --no-install-recommends -y freetds-dev && \
+	ln -s /usr/lib/x86_64-linux-gnu/libsybdb.so /usr/lib/ && \
+	docker-php-ext-install pdo_dblib && \
     sed -i 's,^\(MinProtocol[ ]*=\).*,\1'TLSv1.0',g' /etc/ssl/openssl.cnf && \
     sed -i 's,^\(CipherString[ ]*=\).*,\1'DEFAULT@SECLEVEL=1',g' /etc/ssl/openssl.cnf
 
@@ -60,8 +66,6 @@ RUN crontab /etc/cron.d/crontab
 
 RUN touch /var/log/cron.log
 RUN touch /var/log/myddleware.log
-# RUN : >> /var/log/cron.log
-# RUN chmod +x /app/myddleware-*.sh
 
 RUN cp /usr/local/bin/apache2-foreground /usr/local/bin/apache2-foreground-inherit; \
     { \
